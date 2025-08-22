@@ -1,6 +1,6 @@
 const asyncHandler = (fn) => async (req, res, next) => {
   try {
-    await fn(req, res, next); // Run the async function
+    await fn(req, res, next); // Run the async function and wait for it to complete
   } catch (error) {
     next(error); // Pass any error to Express error handler
   }

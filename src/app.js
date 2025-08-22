@@ -15,4 +15,9 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(express.static("public")); // Serve static files from the "public" directory
 app.use(cookieParser()); // Parse cookies
+
+// Import and use routes
+import userRoutes from "./routes/user.routes.js";
+app.use("/api/v1/users", userRoutes);
+
 export { app };
