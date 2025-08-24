@@ -17,3 +17,5 @@ export const upload = multer({
   // create multer instance with storage settings
   storage: storage,
 });
+
+// Middleware to handle file uploads using multer because file data cannot be accessed using req.body

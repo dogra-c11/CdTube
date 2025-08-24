@@ -7,7 +7,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const upload = async (filePath) => {
+const uploadOnCloudinary = async (filePath) => {
   try {
     if (!filePath) {
       throw new Error("File path is required for upload");
@@ -23,4 +23,4 @@ const upload = async (filePath) => {
   }
 };
 
-export { upload };
+export { uploadOnCloudinary };
