@@ -1,5 +1,6 @@
 import fs from "fs";
 const errorHandler = (err, req, res, next) => {
+  // express handles any error passed to next(error) here
   // Prefer ApiError properties, fall back to generic values
   const statusCode = err.statusCode || err.status || 500;
   const message = err.message || "Internal Server Error";
