@@ -109,8 +109,8 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
 const logoutUser = asyncHandler(async (req, res, next) => {
   // Logout logic here
-  const userId = req.user.id; // we will add req.user in the auth middleware after verifying the access token
-  await User.findByIdAndUpdate(userId, { $unset: { refreshToken: null } }); // Remove refresh token from user document
+  const userId = req.user._id; // we added req.user in the auth middleware after verifying the access token
+  await User.findByIdAndUpdate(userId, { $set: { refreshToken: null } }); // Clear refresh token from user document
 
   const cookieOptions = {
     httpOnly: true,
@@ -139,4 +139,4 @@ const generateAccessAndRefreshToken = async (user_id) => {
   }
 };
 
-export { registerUser, loginUser };
+export { registerUser, loginUser, logoutUser };
