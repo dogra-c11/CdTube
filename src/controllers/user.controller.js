@@ -87,7 +87,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
   const cookieOptions = {
     httpOnly: true, // Mitigates XSS attacks by preventing client-side JS from accessing the cookie for example document.cookie in browser won't show this cookie
-    secure: true, // Only send cookie over HTTPS
+    secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS
     sameSite: "Lax", // CSRF protection (Lax / Strict / None)
   };
 
@@ -114,7 +114,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 
   const cookieOptions = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "Lax",
   };
 
