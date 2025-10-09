@@ -4,6 +4,8 @@ import {
   loginUser,
   logoutUser,
   refreshAccessToken,
+  getCurrentUser,
+  changeUserPassword,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -27,4 +29,6 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 router.route("/logout").post(verifyJWT, logoutUser); // protected route, user must be logged in to logout so verifyJWT middleware is used
 router.route("/refresh-token").post(refreshAccessToken); // public route, user can call this route to get a new access token using refresh token
+router.route("/me").get(verifyJWT, getCurrentUser); // protected route, user must be logged in to get his details
+router.route("/change-password").post(verifyJWT, changeUserPassword); // protected route, user must be logged in to change his password
 export default router;

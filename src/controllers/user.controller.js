@@ -145,6 +145,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   if (!refreshToken) {
     throw new ApiError(401, "Refresh token is missing");
   }
+
   const decoded = await jwt.verify(
     refreshToken,
     process.env.REFRESH_TOKEN_SECRET
@@ -152,14 +153,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   if (!decoded.id) {
     throw new ApiError(401, "Invalid refresh token");
   }
+
   const user = await User.findById(decoded.id);
   if (!user || user.refreshToken !== refreshToken) {
     throw new ApiError(401, "Refresh token is invalid or expired");
   }
+
   const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(
     // Generate new tokens
     user._id
   );
+
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -179,6 +183,40 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 // get current user details
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "Current user fetched successfully"));
+});
 
 // change current user password
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changeUserPassword = asyncHandler(async (req, res) => {
+  const user = req.user; // we added req.user in the auth middleware after verifying the access token
+
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) {
+    throw new ApiError(400, "Both old and new passwords are required");
+  }
+  //const user = await User.findById(userId); // maybe no need to fetch again we have user in req.user
+
+  const isOldPasswordValid = await user.isPasswordCorrect(oldPassword);
+  if (!isOldPasswordValid) {
+    throw new ApiError(401, "Old password is incorrect");
+  }
+
+  user.password = newPassword; // This will be hashed in the pre-save hook of the user model
+  await user.save(); // Save the updated user document
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Password changed successfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeUserPassword,
+  getCurrentUser,
+};
