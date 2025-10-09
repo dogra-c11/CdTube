@@ -139,4 +139,46 @@ const generateAccessAndRefreshToken = async (user_id) => {
   }
 };
 
-export { registerUser, loginUser, logoutUser };
+// refresh access token
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken || req.body.refreshToken; // Check for token in cookies or request body
+  if (!refreshToken) {
+    throw new ApiError(401, "Refresh token is missing");
+  }
+  const decoded = await jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+  if (!decoded.id) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
+  const user = await User.findById(decoded.id);
+  if (!user || user.refreshToken !== refreshToken) {
+    throw new ApiError(401, "Refresh token is invalid or expired");
+  }
+  const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(
+    // Generate new tokens
+    user._id
+  );
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax",
+  };
+  return res
+    .status(200)
+    .cookie("refreshToken", newRefreshToken, cookieOptions) // set new refresh token in the browser cookie of the logged in user
+    .cookie("accessToken", accessToken, cookieOptions) // set new access token in the browser cookie of the logged in user
+    .json(
+      new ApiResponse(
+        200,
+        { accessToken, refreshToken: newRefreshToken },
+        "Access token refreshed successfully"
+      )
+    );
+});
+
+// get current user details
+
+// change current user password
+export { registerUser, loginUser, logoutUser, refreshAccessToken };
