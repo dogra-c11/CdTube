@@ -192,12 +192,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 // change current user password
 const changeUserPassword = asyncHandler(async (req, res) => {
-
   const { oldPassword, newPassword } = req.body;
   if (!oldPassword || !newPassword) {
     throw new ApiError(400, "Both old and new passwords are required");
   }
-  
+
   const user = await User.findById(req.user._id); // maybe no need to fetch again we have user in req.user
 
   const isOldPasswordValid = await user.isPasswordCorrect(oldPassword);
@@ -221,8 +220,11 @@ const updateUserDetails = asyncHandler(async (req, res) => {
   if (email) updates.email = email;
   if (fullname) updates.fullname = fullname;
 
-  if(Object.keys(updates).length === 0){
-    throw new ApiError(400, "At least one field (username, email, fullname) is required to update");
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(
+      400,
+      "At least one field (username, email, fullname) is required to update"
+    );
   }
 
   const user = await User.findByIdAndUpdate(
@@ -293,6 +295,65 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User cover image updated successfully"));
 });
 
+// get user channel profile
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  if (!username?.trim()) {
+    throw new ApiError(400, "Username is required");
+  }
+
+  const user = await User.aggregate([
+    // using aggregation pipeline to get additional fields like subscriberCount, subscribedChannelCount, isSubscribed
+    { $match: { username: username } }, // stage 1 : match username,
+    {
+      $lookup: {
+        // stage 2: lookup subscribers from subscriptions collection
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscribedTo",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        // stage 3: lookup subscriptions from subscriptions collection
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedChannels",
+      },
+    },
+    {
+      $addFields: {
+        // stage 4: add subscriberCount and subscribedChannelCount fields
+        subscriberCount: { $size: "$subscribers" },
+        subscribedChannelCount: { $size: "$subscribedChannels" },
+        isSubscribed: {
+          // check if the current logged in user is subscribed to this channel/user
+          $in: [req.user?._id, "$subscribers.subscriber"],
+        },
+      },
+    },
+    {
+      $project: {
+        password: 0,
+        refreshToken: 0,
+        email: 0,
+      },
+    },
+  ]);
+
+  if (!user || user.length === 0) {
+    throw new ApiError(404, "Channel not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, user[0], "User channel profile fetched successfully")
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -303,4 +364,5 @@ export {
   updateUserDetails,
   updateUserAvatar,
   updateUserCoverImage,
+  getUserChannelProfile,
 };

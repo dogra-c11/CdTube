@@ -9,6 +9,7 @@ import {
   updateUserAvatar,
   updateUserCoverImage,
   updateUserDetails,
+  getUserChannelProfile,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -33,6 +34,7 @@ router.route("/login").post(loginUser);
 router.route("/logout").post(verifyJWT, logoutUser); // protected route, user must be logged in to logout so verifyJWT middleware is used
 router.route("/refresh-token").post(refreshAccessToken); // public route, user can call this route to get a new access token using refresh token
 router.route("/me").get(verifyJWT, getCurrentUser); // protected route, user must be logged in to get his details
+router.route("/channel/:username").get(verifyJWT, getUserChannelProfile); // protected route, user must be logged in to get his details
 router.route("/change-password").post(verifyJWT, changeUserPassword); // protected route, user must be logged in to change his password
 router
   .route("/update-avatar")
