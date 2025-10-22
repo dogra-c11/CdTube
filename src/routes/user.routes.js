@@ -6,6 +6,9 @@ import {
   refreshAccessToken,
   getCurrentUser,
   changeUserPassword,
+  updateUserAvatar,
+  updateUserCoverImage,
+  updateUserDetails,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -31,4 +34,11 @@ router.route("/logout").post(verifyJWT, logoutUser); // protected route, user mu
 router.route("/refresh-token").post(refreshAccessToken); // public route, user can call this route to get a new access token using refresh token
 router.route("/me").get(verifyJWT, getCurrentUser); // protected route, user must be logged in to get his details
 router.route("/change-password").post(verifyJWT, changeUserPassword); // protected route, user must be logged in to change his password
+router
+  .route("/update-avatar")
+  .post(verifyJWT, upload.single("avatar"), updateUserAvatar); // protected route, user must be logged in to update his avatar
+router
+  .route("/update-cover-image")
+  .post(verifyJWT, upload.single("coverImage"), updateUserCoverImage); // protected route, user must be logged in to update his cover image
+router.route("/update-details").post(verifyJWT, updateUserDetails); // protected route, user must be logged in to update his details
 export default router;
