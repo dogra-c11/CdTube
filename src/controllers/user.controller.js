@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import mongoose from "mongoose";
 
 const registerUser = asyncHandler(async (req, res, next) => {
   const { username, email, password, fullname } = req.body;
@@ -354,6 +355,54 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     );
 });
 
+// get user watch history
+const getUserWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    { $match: { _id: req.user._id } },
+    {
+      $lookup: {
+        //to get watch history videos details
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistoryVideos",
+        pipeline: [
+          {
+            $lookup: {
+              // to get uploader details for each video
+              from: "users",
+              localField: "uploadedBy",
+              foreignField: "_id",
+              as: "uploaderDetails",
+              pipeline: [
+                // to project only required fields from uploader details
+                { $project: { username: 1, fullname: 1, avatar: 1 } },
+              ],
+            },
+          },
+          { $unwind: "$uploaderDetails" }, // to flatten the uploaderDetails array
+          // since uploadedBy is a single user, we can unwind the uploaderDetails array which returns the first element of the array , we can also use addFields to set uploadedBy to first element of uploaderDetails array
+        ],
+      },
+    },
+  ]);
+
+  if (!user || user.length === 0) {
+    // check if user exists
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0].watchHistoryVideos,
+        "Watch history fetched successfully"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -365,4 +414,5 @@ export {
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
+  getUserWatchHistory,
 };
